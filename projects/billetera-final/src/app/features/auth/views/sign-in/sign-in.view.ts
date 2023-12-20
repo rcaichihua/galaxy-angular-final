@@ -9,6 +9,10 @@ import { AuthHttp } from '../../http/auth.http';
 import { SignInDto } from '../../dto/sign-in.dto';
 import { AppValidators } from '../../../../common/forms/validators';
 import { ErrorMessageComponent } from '../../../../common/forms/components/error-message/error-message.component';
+import { environment } from '../../../../../environments/environment';
+import { SessionService } from '../../services/session.service';
+import { Router } from '@angular/router';
+
 @Component({
   selector: 'app-sign-in',
   standalone: true,
@@ -27,7 +31,9 @@ import { ErrorMessageComponent } from '../../../../common/forms/components/error
 })
 export default class SignInComponent {
   private fb = inject(FormBuilder);
-  private authHttp = inject(AuthHttp)
+  private authHttp = inject(AuthHttp);
+  private session = inject(SessionService);
+  private router = inject(Router);
   showPassword = false;
 
   form: FormGroup<{
@@ -36,14 +42,17 @@ export default class SignInComponent {
   }>
   constructor() {
     this.form = this.fb.group({
-      email: [null, [Validators.required, AppValidators.email]],
-      password: [null, Validators.required]
+      email: [environment.auth.email, [Validators.required, AppValidators.email]],
+      password: [environment.auth.password, Validators.required]
     })
   }
 
   signIn() {
     if (this.form.invalid) return;
     //this.authHttp.getToken(this.form.getRawValue());
-    this.authHttp.getToken(this.form.value as SignInDto).subscribe(console.log);
+    this.authHttp.getToken(this.form.value as SignInDto)
+      //.subscribe(console.log)
+      .subscribe((tokens: any) => this.session.create(tokens.accessToken, tokens.refreshToken));
+    this.router.navigateByUrl('/admin');
   }
 }
